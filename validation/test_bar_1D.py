@@ -38,6 +38,7 @@ def run_validation():
     )
 
     u_ref = u_exact(x_nodes, L, E, A, b0)
+    print(res["U"])
     err_u_max = np.max(np.abs(res["U"] - u_ref))
     r_expected = -b0 * L
     r_computed = res["reactions"][0]
@@ -54,19 +55,19 @@ def run_validation():
     for n_el in mesh_sizes:
         x_n, elems = generate_uniform_mesh(L, n_el)
         out = solve_bar_1d(
-            x_nodes=x_n,
-            elements=elems,
-            E=A,
-            A=A,
-            b_elem=np.full(n_el, b0),
-            dirichlet_bc={0: 0.0},
-        )
+                x_nodes=x_n,
+                elements=elems,
+                E=E,
+                A=A,
+                b_elem=np.full(n_el, b0),
+                dirichlet_bc={0: 0.0},
+            )
         h = L / n_el
         h_vals.append(h)
-
+        
         # Erreur relative discrète sur les déplacements nodaux
-        u_ref = u_exact(x_nodes, L, E, A, b0)
-        rel_err_u = np.max(np.abs(res["U"] - u_ref))
+        u_ref = u_exact(x_n, L, E, A, b0)
+        rel_err_u = np.linalg.norm(u_ref - out["U"])/np.linalg.norm(u_ref)
         err_u_l2.append(rel_err_u)
 
         # Erreur relative sur les contraintes évaluées au centre des éléments
@@ -125,13 +126,13 @@ if __name__ == "__main__":
     run_validation()
 
 
-"""
 
+"""
 #test avec une forca axiale en bout de poutre
 L = 2.0        # m
 E = 70e9       # Pa (ordre de grandeur aluminium)
 A = 1e-4       # m^2 (100 mm^2)
-b0 = 0    # N/m
+b0 = 5000    # N/m
 n_elem = 16
 
 noeuds, elem = generate_uniform_mesh(L, n_elem)
@@ -144,7 +145,7 @@ out = solve_bar_1d(
             A=A,
             b_elem=np.full(n_elem , b0),
             dirichlet_bc={0: 0.0},
-            point_loads={n_elem: 1000.0}
+            point_loads={n_elem: 0}
         )
 
 print("Déplacements nodaux : ", out["U"])
